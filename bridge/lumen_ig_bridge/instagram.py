@@ -6,9 +6,10 @@ Android app sends. Calls are serialised: instagrapi's client isn't thread-safe,
 and one person's glasses don't need parallel requests to Instagram.
 
 The session (device ids and cookies) lives in a JSON file, so restarts keep the
-same device. It starts from a `sessionid` cookie of a signed-in instagram.com, or
-from the file written by `python -m lumen_ig_bridge login`. Replacing the file
-while the bridge runs takes effect on the next request.
+same device. It comes from `python -m lumen_ig_bridge login` (username and
+password, as the Android app signs in), or on the first start from IG_USERNAME
+and IG_PASSWORD (IG_TOTP_SECRET for two-factor). Replacing the file while the
+bridge runs takes effect on the next request.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, TypeVar
 
 from instagrapi import Client
+from instagrapi.exceptions import TwoFactorRequired
 
 from . import errors, parse
 from .config import Config
@@ -92,14 +94,20 @@ class Instagram:
             if not client.user_id:
                 raise errors.login_required("The session file has no signed-in account.")
             log.info("Loaded the Instagram session from %s", path)
+        elif self._config.username and self._config.password:
+            log.info("Signing in as %s", self._config.username)
+
+            def no_prompt(question: str) -> str:
+                raise errors.login_required(f"Instagram asked for a code; run: python -m lumen_ig_bridge login ({question.strip()})")
+
+            password_login(client, self._config.username, self._config.password, no_prompt, self._config.totp_secret)
+            self._dump(client)
         elif self._config.sessionid:
-            log.info("Signing in with IG_SESSIONID")
+            log.warning("Signing in with IG_SESSIONID: Instagram often ends browser sessions used this way")
             client.login_by_sessionid(self._config.sessionid)
             self._dump(client)
         else:
-            raise errors.login_required(
-                "No Instagram session. Set IG_SESSIONID or run: python -m lumen_ig_bridge login"
-            )
+            raise errors.login_required("No Instagram session. Run: python -m lumen_ig_bridge login")
         self._session_mtime = path.stat().st_mtime if path.exists() else None
         self._cache = _Cache()
         return client
@@ -278,13 +286,51 @@ class Instagram:
         return result
 
 
-def login(config: Config, sessionid: str) -> str:
-    """Signs in with a `sessionid` cookie and writes the session file; returns the username."""
+def password_login(
+    client: Client,
+    username: str,
+    password: str,
+    ask_code: Callable[[str], str],
+    totp_secret: Optional[str] = None,
+) -> None:
+    """Signs `client` in as Instagram's Android app does: password, then a two-factor code
+    (from `totp_secret` or `ask_code`) and any code Instagram sends to confirm the sign-in."""
+    client.challenge_code_handler = lambda _username, choice: ask_code(f"Code Instagram sent you ({choice}): ")
+    try:
+        client.login(username, password)
+    except TwoFactorRequired:
+        code = client.totp_generate_code(totp_secret) if totp_secret else ask_code("Two-factor code: ")
+        client.login(username, password, verification_code=code.strip())
+
+
+def login(
+    config: Config,
+    *,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    sessionid: Optional[str] = None,
+    ask_code: Callable[[str], str] = input,
+    totp_secret: Optional[str] = None,
+    client_factory: Callable[[], Client] = Client,
+) -> str:
+    """Signs in and writes the session file; returns the username.
+
+    A username and password make a session of the Android app the bridge
+    emulates (Instagram may ask to confirm it in the app). A `sessionid` cookie
+    from a browser is accepted too, but Instagram tends to end a browser session
+    as soon as the app's API uses it."""
     signer = MediaSigner(config.bridge_key)
-    service = Instagram(config, signer)
+    service = Instagram(config, signer, client_factory=client_factory)
     client = service._new_client()
     try:
-        client.login_by_sessionid(sessionid)
+        if username and password:
+            password_login(client, username, password, ask_code, totp_secret)
+        elif sessionid:
+            client.login_by_sessionid(sessionid)
+        else:
+            raise errors.login_required("Give a username and password (or a sessionid).")
+    except BridgeError:
+        raise
     except Exception as error:
         raise errors.from_instagram(error) from error
     service._dump(client)

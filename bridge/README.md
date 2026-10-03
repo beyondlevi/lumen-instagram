@@ -18,9 +18,12 @@ won't show images on another site (`Cross-Origin-Resource-Policy: same-origin`).
 ## Run it
 
 1. **A key** for the app: `python -c 'import secrets; print(secrets.token_urlsafe(32))'`.
-2. **Your Instagram session**: on a computer, sign in at instagram.com, open the
-   developer tools, *Application* (Chrome) or *Storage* (Firefox), *Cookies*,
-   `https://www.instagram.com`, and copy the value of `sessionid`.
+2. **Your Instagram account**: its username and password. The bridge signs in as
+   Instagram's Android app does, once, and keeps that session. Instagram may ask
+   for your two-factor code, send a code by email or SMS, or ask *Was this you?* in
+   the Instagram app: approve it. (A `sessionid` cookie copied from a browser does
+   not work for long: Instagram ends a browser session as soon as the app's API
+   uses it, and may sign the browser out too.)
 3. **Start the bridge** on a computer at home (it needs `ffmpeg` for voice notes):
 
    ```sh
@@ -29,7 +32,7 @@ won't show images on another site (`Cross-Origin-Resource-Policy: same-origin`).
    pip install .
    export BRIDGE_KEY='<the key>'
    export IG_LOCALE=pt_BR IG_TIMEZONE_OFFSET=-10800   # your language and time zone
-   python -m lumen_ig_bridge login                    # paste the sessionid; writes data/session.json
+   python -m lumen_ig_bridge login                    # asks the username, password and codes; writes data/session.json
    python -m lumen_ig_bridge                          # listens on 127.0.0.1:8787
    ```
 
@@ -38,12 +41,17 @@ won't show images on another site (`Cross-Origin-Resource-Policy: same-origin`).
    ```sh
    docker build -t lumen-ig-bridge bridge
    docker run -d --name lumen-ig-bridge --restart unless-stopped -p 127.0.0.1:8787:8787 \
-     -e BRIDGE_KEY='<the key>' -e IG_SESSIONID='<sessionid>' \
+     -e BRIDGE_KEY='<the key>' -e IG_USERNAME='<username>' -e IG_PASSWORD='<password>' \
      -e IG_LOCALE=pt_BR -e IG_TIMEZONE_OFFSET=-10800 \
      -v lumen-ig-data:/data lumen-ig-bridge
    ```
 
-   `IG_SESSIONID` is used once, when there is no session file yet.
+   `IG_USERNAME` and `IG_PASSWORD` are used once, when there is no session file yet
+   (add `IG_TOTP_SECRET`, the authenticator's secret, for two-factor). When Instagram
+   asks for a code, run `docker exec -it lumen-ig-bridge python -m lumen_ig_bridge login`.
+
+   On a Mac or Linux box, `scripts/start.sh` (re)starts the bridge and a Cloudflare
+   quick tunnel in the background, reading `.env`, and prints the tunnel's address.
 4. **Make it reachable from the glasses** over HTTPS. The glasses reach the
    internet through Wi-Fi or the phone, not your home network, so use a tunnel:
    `ngrok http 8787`, `cloudflared tunnel --url http://127.0.0.1:8787` or
@@ -59,7 +67,9 @@ Check it: `curl https://<tunnel>/v1/health`, then
 | Variable | |
 | --- | --- |
 | `BRIDGE_KEY` | Required, 24 characters or more. The app sends it as `Authorization: Bearer`; it also signs media links. |
-| `IG_SESSIONID` | A `sessionid` cookie, used when there is no session file. |
+| `IG_USERNAME`, `IG_PASSWORD` | Used once, when there is no session file: signs in as the Android app. `login` asks for them when they are not set. |
+| `IG_TOTP_SECRET` | The authenticator app's secret, for two-factor codes without asking. |
+| `IG_SESSIONID` | A browser `sessionid` cookie, used when there is no session file and no password. Instagram usually ends it within seconds. |
 | `IG_SESSION_FILE` | The instagrapi session (device ids, cookies). Default `data/session.json`, written with mode 600. Replace it while the bridge runs and the next request uses it. |
 | `IG_PROXY` | A proxy for every Instagram request (`http://`, `https://`, `socks5://`). |
 | `IG_LOCALE`, `IG_TIMEZONE_OFFSET` | What the device tells Instagram, e.g. `pt_BR` and `-10800`. |
@@ -67,10 +77,10 @@ Check it: `curl https://<tunnel>/v1/health`, then
 
 ## When Instagram ends the session
 
-The app shows *Sign in on your phone* (`login_required`) or *Confirm it's you*
+The app shows *Sign in on your bridge* (`login_required`) or *Confirm it's you*
 (`challenge`). For a challenge, open Instagram on your phone and approve the sign-in.
-If it keeps failing, copy a new `sessionid` and run `python -m lumen_ig_bridge login`
-again (or delete the session file and restart with a new `IG_SESSIONID`).
+If it keeps failing, run `python -m lumen_ig_bridge login` again: it starts a new
+session (and replaces the session file).
 
 ## API
 

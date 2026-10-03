@@ -20,7 +20,11 @@ class Config:
     bridge_key: str
     #: The instagrapi session (device, cookies), kept between restarts.
     session_file: Path
-    #: A `sessionid` cookie from a signed-in instagram.com, used once when there is no session file.
+    #: Used once, when there is no session file: the account's username and password
+    #: (and the authenticator's secret for two-factor), or a browser `sessionid` cookie.
+    username: Optional[str] = None
+    password: Optional[str] = None
+    totp_secret: Optional[str] = None
     sessionid: Optional[str] = None
     #: Optional proxy for every Instagram request (http://, https:// or socks5://).
     proxy: Optional[str] = None
@@ -51,6 +55,9 @@ def load(env: Mapping[str, str] = os.environ) -> Config:
     return Config(
         bridge_key=key,
         session_file=Path(env.get("IG_SESSION_FILE") or "data/session.json"),
+        username=(env.get("IG_USERNAME") or "").strip() or None,
+        password=env.get("IG_PASSWORD") or None,
+        totp_secret=(env.get("IG_TOTP_SECRET") or "").replace(" ", "") or None,
         sessionid=(env.get("IG_SESSIONID") or "").strip() or None,
         proxy=(env.get("IG_PROXY") or "").strip() or None,
         locale=(env.get("IG_LOCALE") or "").strip() or None,
