@@ -1,0 +1,17 @@
+node_modules/
+dist/
+dist-e2e/
+*.mrbd.zip
+.wearables-test/
+.e2e-output/
+.env
+.env.*
+*.log
+.local/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+bridge/data/
+bridge/*.egg-info/
+bridge/build/
