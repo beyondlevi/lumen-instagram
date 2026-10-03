@@ -86,7 +86,7 @@ def create_app(
         CORSMiddleware,
         allow_origins=["*"],
         allow_methods=["GET", "POST", "DELETE"],
-        allow_headers=["Authorization", "Content-Type", "Range"],
+        allow_headers=["Authorization", "Content-Type", "Range", "ngrok-skip-browser-warning"],
         expose_headers=["Content-Range", "Accept-Ranges", "Content-Length", "Retry-After"],
         max_age=600,
     )

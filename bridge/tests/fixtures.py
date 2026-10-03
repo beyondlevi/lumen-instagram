@@ -4,9 +4,12 @@ Key names follow instagrapi's extractors (instagrapi 3.0.19) and its regression
 tests. The values are made up.
 """
 
+import os
+
 VIEWER = "1001"
-CDN = "https://scontent-gru2-1.cdninstagram.com"
-VIDEO_CDN = "https://instagram.fgru2-1.fna.fbcdn.net"
+# The app's E2E tests point these at a local stand-in for the CDN.
+CDN = os.environ.get("LUMEN_E2E_CDN", "https://scontent-gru2-1.cdninstagram.com")
+VIDEO_CDN = os.environ.get("LUMEN_E2E_VIDEO_CDN", "https://instagram.fgru2-1.fna.fbcdn.net")
 
 
 def user(pk, username, full_name=""):
@@ -176,7 +179,11 @@ def inbox():
     }
 
 
-def thread_response():
+def thread_response(thread_id=None):
+    for build in (thread_crew, thread_untitled):
+        thread = build()
+        if thread_id == thread["thread_id"]:
+            return {"thread": thread, "status": "ok"}
     return {"thread": thread_ana(), "status": "ok"}
 
 

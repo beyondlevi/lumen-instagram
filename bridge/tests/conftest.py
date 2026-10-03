@@ -58,7 +58,7 @@ class FakeClient:
         if self.fail_with is not None:
             raise self.fail_with
         if endpoint.startswith("direct_v2/threads/"):
-            return fixtures.thread_response()
+            return fixtures.thread_response(endpoint.split("/")[2])
         if endpoint.startswith("media/") and endpoint.endswith("/comments/"):
             return fixtures.comments()
         if endpoint.startswith("media/") and endpoint.endswith("/info/"):

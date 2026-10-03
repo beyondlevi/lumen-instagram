@@ -95,7 +95,6 @@ export function PlayPage() {
         paused={paused}
         onPausedChange={setPaused}
         controlsAlwaysShown
-        initialFocusEligible
         controls={() => (
           <ButtonRail centerContentWhenSmallerThanWidth>
             <QuickReplyButton icon={heartFilled} aria-label={t('sharedReactHeart')} onClick={() => reactWith('❤️')} />

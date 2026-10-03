@@ -11,7 +11,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
-from typing import Optional
+from typing import Iterable, Optional
 from urllib.parse import urlsplit
 
 MEDIA_PREFIX = "/v1/m/"
@@ -36,9 +36,22 @@ def allowed_url(url: str) -> bool:
     return parts.scheme == "https" and any(host.endswith(suffix) for suffix in ALLOWED_HOST_SUFFIXES)
 
 
+def _origin(url: str) -> str:
+    parts = urlsplit(url)
+    return f"{parts.scheme}://{parts.netloc}".lower()
+
+
 class MediaSigner:
-    def __init__(self, bridge_key: str):
+    def __init__(self, bridge_key: str, extra_origins: Iterable[str] = ()):
         self._secret = hmac.new(bridge_key.encode("utf-8"), b"lumen-ig-bridge/media", hashlib.sha256).digest()
+        # Tests only: a local stand-in for the CDN (e.g. http://127.0.0.1:8791).
+        self._extra_origins = {origin.rstrip("/").lower() for origin in extra_origins}
+
+    def allowed(self, url: str) -> bool:
+        try:
+            return allowed_url(url) or (bool(self._extra_origins) and _origin(url) in self._extra_origins)
+        except ValueError:
+            return False
 
     def _signature(self, url: str) -> str:
         digest = hmac.new(self._secret, url.encode("utf-8"), hashlib.sha256).digest()
@@ -46,7 +59,7 @@ class MediaSigner:
 
     def proxy(self, url: Optional[str]) -> Optional[str]:
         """The bridge path for a CDN URL (relative to the bridge), or None."""
-        if not url or not allowed_url(url):
+        if not url or not self.allowed(url):
             return None
         return f"{MEDIA_PREFIX}{_b64encode(url.encode('utf-8'))}.{self._signature(url)}"
 
@@ -61,4 +74,4 @@ class MediaSigner:
             return None
         if not hmac.compare_digest(signature, self._signature(url)):
             return None
-        return url if allowed_url(url) else None
+        return url if self.allowed(url) else None

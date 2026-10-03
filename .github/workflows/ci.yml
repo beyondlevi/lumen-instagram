@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pip install './bridge[test]'
+      - name: Bridge tests (fake Instagram client)
+        working-directory: bridge
+        run: python -m pytest -q
+
+  app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pip install './bridge[test]'
+      - run: npm ci
+      - run: npm test
+      - name: Build and package (.mrbd.zip)
+        run: npm run package
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox
+      - name: Keyboard E2E against the bridge
+        run: npm run test:e2e
+        env:
+          BRIDGE_PYTHON: python
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lumen-instagram.mrbd.zip
+          path: dist/lumen-instagram.mrbd.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-screenshots
+          path: .e2e-output/

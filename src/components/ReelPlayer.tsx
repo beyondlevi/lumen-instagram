@@ -174,9 +174,43 @@ export const ReelPlayer = forwardRef<ReelPlayerHandle, Props>(function ReelPlaye
   const failed = playback.status === 'failed';
   const showControls = controls != null && (controlsAlwaysShown || paused);
   const stateLabel = paused ? t('reelPaused') : t('reelPlaying');
+  const shelf = (
+    <>
+      <div className="reel-caption">
+        <div className="reel-author">
+          <Avatar
+            size={AvatarSize.SMALL}
+            src={reel.user?.avatarUrl ?? undefined}
+            primaryContent={reel.user?.avatarUrl ? undefined : avatarFallback(author)}
+            alt=""
+          />
+          <TextView as="span" className="reel-author-name" textStyle={TextStyle.LABEL_EMPHASIZED}>
+            {author}
+          </TextView>
+        </div>
+        {reel.caption ? (
+          <TextView as="p" className="reel-caption-text" textStyle={TextStyle.META2} textColor={TextColor.SECONDARY}>
+            {reel.caption}
+          </TextView>
+        ) : null}
+        <TextView as="span" className="reel-audio" textStyle={TextStyle.META3} textColor={TextColor.SECONDARY}>
+          {reel.audioTitle ?? t('originalAudio')}
+        </TextView>
+      </div>
+      <ProgressIndicator
+        className="reel-progress"
+        size={ProgressIndicatorSize.THIN}
+        value={playback.position}
+        maximumValue={playback.duration || 1}
+        isActive={playback.status === 'playing'}
+        announceUpdatesForAccessibility={false}
+        aria-label={t('positionLabel')}
+      />
+    </>
+  );
 
   return (
-    <div className="reel-player" onKeyDown={onKeyDown}>
+    <div className={controlsAlwaysShown ? 'reel-player reel-player--shelf' : 'reel-player'} onKeyDown={onKeyDown}>
       <div className="reel-frame">
         <video
           ref={videoRef}
@@ -216,36 +250,7 @@ export const ReelPlayer = forwardRef<ReelPlayerHandle, Props>(function ReelPlaye
         ) : null}
         {!showControls ? (
           <MediaWrapper className="reel-shelf" position={MediaWrapperPosition.BOTTOM} size={MediaWrapperSize.LARGE}>
-            <div className="reel-caption">
-              <div className="reel-author">
-                <Avatar
-                  size={AvatarSize.SMALL}
-                  src={reel.user?.avatarUrl ?? undefined}
-                  primaryContent={reel.user?.avatarUrl ? undefined : avatarFallback(author)}
-                  alt=""
-                />
-                <TextView as="span" className="reel-author-name" textStyle={TextStyle.LABEL_EMPHASIZED}>
-                  {author}
-                </TextView>
-              </div>
-              {reel.caption ? (
-                <TextView as="p" className="reel-caption-text" textStyle={TextStyle.META2} textColor={TextColor.SECONDARY}>
-                  {reel.caption}
-                </TextView>
-              ) : null}
-              <TextView as="span" className="reel-audio" textStyle={TextStyle.META3} textColor={TextColor.SECONDARY}>
-                {reel.audioTitle ?? t('originalAudio')}
-              </TextView>
-            </div>
-            <ProgressIndicator
-              className="reel-progress"
-              size={ProgressIndicatorSize.THIN}
-              value={playback.position}
-              maximumValue={playback.duration || 1}
-              isActive={playback.status === 'playing'}
-              announceUpdatesForAccessibility={false}
-              aria-label={t('positionLabel')}
-            />
+            {shelf}
           </MediaWrapper>
         ) : null}
         <button
@@ -281,6 +286,7 @@ export const ReelPlayer = forwardRef<ReelPlayerHandle, Props>(function ReelPlaye
       ) : null}
       {showControls ? (
         <MediaWrapper className="reel-controls" position={MediaWrapperPosition.BOTTOM} size={MediaWrapperSize.LARGE}>
+          {controlsAlwaysShown ? <div className="reel-controls-caption">{shelf}</div> : null}
           {controls?.({position: playback.position, duration: playback.duration, seek})}
         </MediaWrapper>
       ) : null}

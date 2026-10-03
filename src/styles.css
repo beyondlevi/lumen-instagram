@@ -249,6 +249,19 @@ body {
   block-size: var(--uit-icon-2xl);
 }
 
+/* A reel from Direct: the quick replies stay up, so the reel's focus target
+   ends above them (focus moves down to them, and back up). */
+.reel-player--shelf .reel-surface {
+  inset-block-end: calc(var(--uit-spacing-5xl) * 3.5);
+}
+
+/* Its caption sits above the quick replies, under the video. */
+.reel-controls-caption {
+  inline-size: calc(100vb * 9 / 16);
+  max-inline-size: 100%;
+  margin-inline: auto;
+}
+
 .play-page .reel-player {
   position: absolute;
   inset: 0;
