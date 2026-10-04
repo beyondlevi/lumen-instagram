@@ -1,6 +1,6 @@
 # Instagram for Rokid Lumen
 
-Instagram Reels and Direct on Rokid Lumen glasses, driven by the Neural Band: an
+Instagram Reels and Direct on [Rokid Lumen](https://github.com/beyondlevi/rokid-lumen) glasses, driven by the Neural Band: an
 MRBD web app built on Meta's [UI Toolkit for Meta Ray-Ban Display](https://github.com/facebook/meta-ray-ban-display-ui-toolkit-web),
 and a small bridge you run at home that talks to Instagram for it.
 
@@ -17,6 +17,17 @@ Instagram          (videos play straight from Instagram's CDN)
 > Instagram's terms don't allow automated clients. This is for your own account,
 > from your own home connection; expect Instagram to ask you to confirm a sign-in
 > now and then. Nothing is posted or sent unless you do it on the glasses.
+
+> **Unofficial.** Instagram for Lumen is an independent project. It is not affiliated with, endorsed
+> or sponsored by Instagram, Meta Platforms, Inc., or Rokid. Instagram and Meta are trademarks of Meta
+> Platforms, Inc., used here only to say what the app works with.
+>
+> **Use at your own risk.** The bridge talks to Instagram through its private, undocumented mobile
+> API (via [instagrapi](https://github.com/subzeroid/instagrapi)), which Instagram's Terms of Use don't
+> allow. Instagram may ask you to verify sign-ins, limit features, or temporarily or permanently
+> suspend the account you use with it. Use an account you can afford to lose, run the bridge only for
+> yourself, and don't use it to collect other people's data. The software is provided "as is",
+> without warranty (see [LICENSE](LICENSE)).
 
 ## What it does
 
@@ -44,7 +55,8 @@ Instagram          (videos play straight from Instagram's CDN)
 ## Set up
 
 1. **Run the bridge** at home and expose it over HTTPS: see [bridge/README.md](bridge/README.md).
-   It needs a `sessionid` cookie from a signed-in instagram.com and a key you choose.
+   It needs your Instagram username and password (a `sessionid` cookie only as a last resort) and a
+   key you choose.
 2. **Install the package** on the glasses: from a release or `npm run package`, then
    `scripts/push-webapp.sh dist/lumen-instagram.mrbd.zip` from the Lumen repository,
    or the companion's **Apps, Add, Offline package**.
@@ -94,3 +106,13 @@ Layout:
 - Comments are read-only; no stories, no posting, no new conversations.
 - Not tested yet against a real Instagram account or on the glasses: everything above
   is tested against the fake client and in desktop Chromium and Firefox.
+
+## License
+
+MIT, see [LICENSE](LICENSE). Copyright (c) 2026 Levi Nóbrega.
+
+Third-party: [instagrapi](https://github.com/subzeroid/instagrapi) (MIT) and the bridge's other Python
+dependencies keep their own licenses; the [UI Toolkit for Meta Ray-Ban Display](https://github.com/facebook/meta-ray-ban-display-ui-toolkit-web)
+(`@wearables-ui-toolkit/mrbd`, `foundation`: Apache-2.0, Copyright Meta Platforms, Inc.;
+`@wearables-ui-toolkit/icons`, bundled into the built `.mrbd.zip`, under the Meta Wearables Developer
+Terms). The demo photos come from [Picsum](https://picsum.photos) (Unsplash License).

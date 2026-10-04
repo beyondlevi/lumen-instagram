@@ -14,6 +14,10 @@ won't show images on another site (`Cross-Origin-Resource-Policy: same-origin`).
 > from your home connection, and expect Instagram to ask you to confirm a sign-in
 > now and then. The bridge never posts or sends anything by itself: every write
 > is something you did on the glasses.
+>
+> Unofficial, not affiliated with Instagram or Meta. Instagram may limit or
+> suspend the account you use with it; use one you can afford to lose. Provided
+> "as is", without warranty (see [LICENSE](../LICENSE)).
 
 ## Run it
 

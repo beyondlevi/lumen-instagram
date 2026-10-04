@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "lumen-ig-bridge"
 version = "0.1.0"
+license = "MIT"
 description = "Instagram Reels and Direct for Instagram for Lumen (Rokid Lumen glasses)."
 readme = "README.md"
 requires-python = ">=3.10"
